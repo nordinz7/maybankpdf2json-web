@@ -3,3 +3,4 @@ python-dotenv>=1.0.0
 maybankpdf2json>0.2.0
 gunicorn>=21.0
 whitenoise>=6.0
+dj-database-url>=2.0

@@ -13,6 +13,7 @@ SECRET_KEY = os.environ.get(
 DEBUG = os.environ.get("DEBUG", "True") == "True"
 
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+ALLOWED_HOSTS = [h.strip() for h in ALLOWED_HOSTS]  # Strip whitespace
 
 INSTALLED_APPS = [
     "django.contrib.contenttypes",
@@ -46,12 +47,17 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+# Database configuration - use PostgreSQL on Render, SQLite locally
+if os.environ.get("DATABASE_URL"):
+    import dj_database_url
+    DATABASES = {"default": dj_database_url.config(default=os.environ.get("DATABASE_URL"))}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
 
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Kuala_Lumpur"
@@ -60,7 +66,15 @@ USE_TZ = True
 
 # Security settings for production
 if not DEBUG:
-    CSRF_TRUSTED_ORIGINS = os.environ.get("CSRF_TRUSTED_ORIGINS", "").split(",")
+    csrf_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
+    if csrf_origins:
+        origins_list = [
+            f"https://{origin.strip()}" if not origin.strip().startswith("http") else origin.strip()
+            for origin in csrf_origins.split(",")
+        ]
+        CSRF_TRUSTED_ORIGINS = [o for o in origins_list if o]  # Remove empty strings
+    else:
+        CSRF_TRUSTED_ORIGINS = []
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True

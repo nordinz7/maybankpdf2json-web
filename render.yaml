@@ -10,10 +10,8 @@ services:
         value: "False"
       - key: SECRET_KEY
         generateValue: true
-      - key: ALLOWED_HOSTS
-        value: ${RENDER_EXTERNAL_HOSTNAME}
-      - key: CSRF_TRUSTED_ORIGINS
-        value: https://${RENDER_EXTERNAL_HOSTNAME}
+    databaseId: postgres
+
 databases:
   - name: postgres
     databaseName: maybankpdf2json
