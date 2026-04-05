@@ -1,4 +1,3 @@
 django>=4.2,<5.0
 python-dotenv>=1.0.0
-# Install the local maybankpdf2json package from the sibling directory.
-# Run: pip install -e ../maybankpdf2json
+maybankpdf2json>0.2.0

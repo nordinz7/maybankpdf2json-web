@@ -11,7 +11,7 @@ Small Django web UI for uploading Maybank PDF statements, extracting transaction
 ## What It Does
 
 - Upload one or more password-protected or unprotected Maybank PDF statements
-- Parse each file with the local `maybankpdf2json` package
+- Parse each file with `maybankpdf2json` package
 - Store statements and transactions in SQLite
 - Show upload status, parser failures, and extracted metadata
 - Browse imported transactions with HTMX-powered filters
@@ -25,7 +25,7 @@ Small Django web UI for uploading Maybank PDF statements, extracting transaction
 - HTMX
 - Bootstrap 5
 - `python-dotenv`
-- Local sibling dependency: `maybankpdf2json`
+- `maybankpdf2json`
 
 ## Project Layout
 
@@ -48,7 +48,7 @@ Small Django web UI for uploading Maybank PDF statements, extracting transaction
 
 1. Create and activate a virtual environment.
 2. Install the web app requirements.
-3. Install the parser package from the sibling repository.
+3. Install the parser package separately in the same environment.
 4. Run migrations.
 5. Start the Django development server.
 
@@ -56,7 +56,6 @@ Small Django web UI for uploading Maybank PDF statements, extracting transaction
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-pip install -e ../maybankpdf2json
 python manage.py migrate
 python manage.py runserver
 ```
@@ -112,13 +111,3 @@ Notes:
 - Uploaded files are processed in memory; extracted rows are persisted to the database.
 - Duplicate statement uploads are currently allowed.
 - Failed parses are recorded on the statement row with the exception message.
-
-## Dependency Note
-
-The parser import comes from:
-
-```python
-from maybankpdf2json import MaybankPdf2Json
-```
-
-That package is not vendored in this repository, so the sibling checkout must exist at `../maybankpdf2json` unless you install it from another source.
