@@ -11,7 +11,7 @@ class Statement(models.Model):
         (STATUS_ERROR, "Error"),
     ]
 
-    filename = models.CharField(max_length=255)
+    filename = models.CharField(max_length=255, blank=True, default="")
     account_number = models.CharField(max_length=64, null=True, blank=True)
     statement_date = models.CharField(max_length=16, null=True, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
@@ -22,9 +22,17 @@ class Statement(models.Model):
 
     class Meta:
         ordering = ["-uploaded_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["statement_date"],
+                condition=models.Q(statement_date__isnull=False)
+                & ~models.Q(statement_date=""),
+                name="uniq_statement_date_non_empty",
+            )
+        ]
 
     def __str__(self) -> str:
-        return self.filename
+        return self.statement_date or self.filename or f"Statement #{self.pk}"
 
 
 class Transaction(models.Model):

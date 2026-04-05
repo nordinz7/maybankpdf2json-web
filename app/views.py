@@ -1,12 +1,36 @@
 import io
 
-from django.db.models import Q
+from django.db import IntegrityError
+from django.db.models import Case, CharField, Value, When
+from django.db.models.functions import Concat, Substr
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render, get_object_or_404
 
 from maybankpdf2json import MaybankPdf2Json
 
 from .models import Statement, Transaction
+
+
+def ordered_statements():
+    """Return statements sorted by latest statement_date first.
+
+    statement_date is stored as dd/mm/yy, so compute a sortable yymmdd key.
+    """
+    return Statement.objects.annotate(
+        sort_date=Case(
+            When(
+                statement_date__contains="/",
+                then=Concat(
+                    Value("20"),
+                    Substr("statement_date", 7, 2),
+                    Substr("statement_date", 4, 2),
+                    Substr("statement_date", 1, 2),
+                ),
+            ),
+            default=Value(""),
+            output_field=CharField(),
+        )
+    ).order_by("-sort_date", "-uploaded_at")
 
 
 # ---------------------------------------------------------------------------
@@ -16,7 +40,7 @@ from .models import Statement, Transaction
 
 def index(request: HttpRequest) -> HttpResponse:
     """Main upload page."""
-    statements = Statement.objects.all()
+    statements = ordered_statements()
     return render(request, "app/index.html", {"statements": statements})
 
 
@@ -31,15 +55,48 @@ def upload(request: HttpRequest) -> HttpResponse:
     files = request.FILES.getlist("pdfs")
     password: str = request.POST.get("password", "")
 
-    for f in files:
-        statement = Statement.objects.create(
-            filename=f.name,
-            status=Statement.STATUS_PROCESSING,
+    # Accept only PDFs even if a full folder is selected client-side.
+    pdf_files = [f for f in files if f.name.lower().endswith(".pdf")]
+
+    if not pdf_files:
+        Statement.objects.create(
+            filename="(no-valid-pdf)",
+            status=Statement.STATUS_ERROR,
+            error_message="No valid PDF files uploaded.",
         )
+
+    for f in pdf_files:
         try:
             buf = io.BytesIO(f.read())
             extractor = MaybankPdf2Json(buf, pwd=password or None)
             result = extractor.json()
+
+            statement_date = result.get("statement_date")
+            account_number = result.get("account_number")
+
+            if (
+                statement_date
+                and Statement.objects.filter(
+                    statement_date=statement_date,
+                    status=Statement.STATUS_DONE,
+                ).exists()
+            ):
+                Statement.objects.create(
+                    status=Statement.STATUS_ERROR,
+                    filename=f.name,
+                    account_number=account_number,
+                    error_message=(
+                        f"Duplicate statement date {statement_date}. "
+                        "This statement is already uploaded."
+                    ),
+                )
+                continue
+
+            statement = Statement.objects.create(
+                status=Statement.STATUS_PROCESSING,
+                statement_date=statement_date,
+                account_number=account_number,
+            )
 
             transactions = [
                 Transaction(
@@ -53,17 +110,27 @@ def upload(request: HttpRequest) -> HttpResponse:
             ]
             Transaction.objects.bulk_create(transactions)
 
-            statement.account_number = result.get("account_number")
-            statement.statement_date = result.get("statement_date")
             statement.status = Statement.STATUS_DONE
-            statement.save()
+            statement.save(update_fields=["status"])
+
+        except IntegrityError:
+            Statement.objects.create(
+                status=Statement.STATUS_ERROR,
+                filename=f.name,
+                error_message=(
+                    f"Duplicate statement date {statement_date}. "
+                    "This statement is already uploaded."
+                ),
+            )
 
         except Exception as exc:  # noqa: BLE001
-            statement.status = Statement.STATUS_ERROR
-            statement.error_message = str(exc)
-            statement.save()
+            Statement.objects.create(
+                status=Statement.STATUS_ERROR,
+                filename=f.name,
+                error_message=str(exc),
+            )
 
-    statements = Statement.objects.all()
+    statements = ordered_statements()
     return render(
         request, "app/partials/statement_list.html", {"statements": statements}
     )
@@ -76,7 +143,7 @@ def upload(request: HttpRequest) -> HttpResponse:
 
 def statements(request: HttpRequest) -> HttpResponse:
     """Full statements list page."""
-    all_statements = Statement.objects.all()
+    all_statements = ordered_statements()
     return render(request, "app/statements.html", {"statements": all_statements})
 
 
@@ -116,7 +183,7 @@ def transactions(request: HttpRequest) -> HttpResponse:
         "account": account,
         "stmt_id": stmt_id,
         "accounts": accounts,
-        "all_statements": Statement.objects.filter(status=Statement.STATUS_DONE),
+        "all_statements": ordered_statements().filter(status=Statement.STATUS_DONE),
     }
 
     # If HTMX request, return only the rows partial
@@ -137,7 +204,7 @@ def delete_statement(request: HttpRequest, pk: int) -> HttpResponse:
         return HttpResponse(status=405)
     stmt = get_object_or_404(Statement, pk=pk)
     stmt.delete()
-    statements_qs = Statement.objects.all()
+    statements_qs = ordered_statements()
     return render(
         request, "app/partials/statement_list.html", {"statements": statements_qs}
     )

@@ -129,8 +129,28 @@
         const zone = document.getElementById("drop-zone");
         if (!zone) return;
         const input = zone.querySelector("input[type=file]");
+        const folderInput = document.getElementById("pdf-folder");
+        const folderBtn = document.getElementById("pick-folder-btn");
+
+        function isPdf(file) {
+          return file && file.name && file.name.toLowerCase().endsWith(".pdf");
+        }
+
+        function setPdfFiles(fileList) {
+          const files = Array.from(fileList || []);
+          const pdfFiles = files.filter(isPdf);
+          const dt = new DataTransfer();
+          pdfFiles.forEach((file) => dt.items.add(file));
+          input.files = dt.files;
+          updateLabel(files.length - pdfFiles.length);
+        }
 
         zone.addEventListener("click", () => input.click());
+
+        if (folderBtn && folderInput) {
+          folderBtn.addEventListener("click", () => folderInput.click());
+          folderInput.addEventListener("change", () => setPdfFiles(folderInput.files));
+        }
 
         zone.addEventListener("dragover", (e) => {
           e.preventDefault();
@@ -142,16 +162,19 @@
         zone.addEventListener("drop", (e) => {
           e.preventDefault();
           zone.classList.remove("dragover");
-          input.files = e.dataTransfer.files;
-          updateLabel();
+          setPdfFiles(e.dataTransfer.files);
         });
 
-        input.addEventListener("change", updateLabel);
+        input.addEventListener("change", () => setPdfFiles(input.files));
 
-        function updateLabel() {
+        function updateLabel(skipped = 0) {
           const label = zone.querySelector("#drop-label");
           if (input.files && input.files.length > 0) {
-            label.textContent = `${input.files.length} file(s) selected`;
+            if (skipped > 0) {
+              label.textContent = `${input.files.length} PDF file(s) selected (${skipped} non-PDF skipped)`;
+            } else {
+              label.textContent = `${input.files.length} PDF file(s) selected`;
+            }
           } else {
             label.textContent = "Drag & drop PDFs here, or click to browse";
           }

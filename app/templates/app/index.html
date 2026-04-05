@@ -10,6 +10,9 @@
       <div class="card-body">
         <form
           id="upload-form"
+          method="post"
+          action="/upload/"
+          enctype="multipart/form-data"
           hx-post="/upload/"
           hx-target="#statement-list"
           hx-swap="outerHTML"
@@ -24,6 +27,13 @@
               Drag &amp; drop PDFs here, or click to browse
             </p>
             <input type="file" name="pdfs" id="pdfs" multiple accept=".pdf" />
+            <input type="file" id="pdf-folder" webkitdirectory directory multiple />
+          </div>
+
+          <div class="mb-3">
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="pick-folder-btn">
+              <i class="bi bi-folder2-open me-1"></i>Select Folder (PDFs only)
+            </button>
           </div>
 
           <div class="mb-3">

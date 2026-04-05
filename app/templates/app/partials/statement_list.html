@@ -9,9 +9,8 @@
     <table class="table table-hover table-sm mb-0">
       <thead class="table-light">
         <tr>
-          <th>File</th>
-          <th>Account</th>
           <th>Date</th>
+          <th>Account</th>
           <th class="text-end">Txns</th>
           <th>Status</th>
           <th></th>
@@ -20,12 +19,8 @@
       <tbody>
         {% for s in statements %}
         <tr>
-          <td class="text-truncate" style="max-width:160px" title="{{ s.filename }}">
-            <i class="bi bi-file-earmark-pdf text-danger me-1"></i>
-            {{ s.filename }}
-          </td>
-          <td class="font-monospace small">{{ s.account_number|default:"—" }}</td>
           <td class="small">{{ s.statement_date|default:"—" }}</td>
+          <td class="font-monospace small">{{ s.account_number|default:"—" }}</td>
           <td class="text-end small">
             {% if s.status == "done" %}
               {{ s.transactions.count }}
@@ -54,7 +49,7 @@
                     hx-delete="/statements/{{ s.id }}/delete/"
                     hx-target="#statement-list"
                     hx-swap="outerHTML"
-                    hx-confirm="Delete {{ s.filename }} and all its transactions?"
+                    hx-confirm="Delete statement {{ s.statement_date|default:'#' }} and all its transactions?"
                     title="Delete">
               <i class="bi bi-trash"></i>
             </button>
@@ -62,7 +57,7 @@
         </tr>
         {% if s.status == "error" and s.error_message %}
         <tr class="table-danger">
-          <td colspan="6" class="small text-danger py-1">
+          <td colspan="5" class="small text-danger py-1">
             <i class="bi bi-exclamation-triangle me-1"></i>{{ s.error_message }}
           </td>
         </tr>
