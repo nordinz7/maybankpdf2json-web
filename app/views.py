@@ -54,6 +54,7 @@ def upload(request: HttpRequest) -> HttpResponse:
 
     files = request.FILES.getlist("pdfs")
     password: str = request.POST.get("password", "")
+    override_existing = request.POST.get("override_existing") in {"1", "true", "on"}
 
     # Accept only PDFs even if a full folder is selected client-side.
     pdf_files = [f for f in files if f.name.lower().endswith(".pdf")]
@@ -74,23 +75,26 @@ def upload(request: HttpRequest) -> HttpResponse:
             statement_date = result.get("statement_date")
             account_number = result.get("account_number")
 
-            if (
-                statement_date
-                and Statement.objects.filter(
-                    statement_date=statement_date,
-                    status=Statement.STATUS_DONE,
-                ).exists()
-            ):
+            existing_stmt = None
+            if statement_date:
+                existing_stmt = Statement.objects.filter(
+                    statement_date=statement_date
+                ).first()
+
+            if existing_stmt and not override_existing:
                 Statement.objects.create(
                     status=Statement.STATUS_ERROR,
                     filename=f.name,
                     account_number=account_number,
                     error_message=(
-                        f"Duplicate statement date {statement_date}. "
-                        "This statement is already uploaded."
+                        f"Skipped: statement date {statement_date} already exists. "
+                        "Enable override to replace it."
                     ),
                 )
                 continue
+
+            if existing_stmt and override_existing:
+                existing_stmt.delete()
 
             statement = Statement.objects.create(
                 status=Statement.STATUS_PROCESSING,

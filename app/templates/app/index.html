@@ -50,6 +50,22 @@
             />
           </div>
 
+          <div class="form-check mb-3">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="override_existing"
+              name="override_existing"
+              value="1"
+            />
+            <label class="form-check-label" for="override_existing">
+              Override existing statement when same date already exists
+            </label>
+            <div class="form-text">
+              If unchecked, duplicates are skipped.
+            </div>
+          </div>
+
           <div class="d-flex align-items-center gap-2">
             <button type="submit" class="btn btn-primary" id="upload-btn">
               <i class="bi bi-upload me-1"></i>Process
@@ -73,8 +89,8 @@
       <div class="card-body text-muted small">
         <i class="bi bi-info-circle me-1"></i>
         Supports Maybank current &amp; savings account PDF statements. Multiple
-        files can be uploaded at once. Each PDF is processed independently —
-        duplicates are allowed.
+        files can be uploaded at once. Each PDF is processed independently.
+        Duplicate statement dates are skipped unless override is enabled.
       </div>
     </div>
   </div>
