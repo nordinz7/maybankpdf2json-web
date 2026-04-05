@@ -1,0 +1,75 @@
+{% extends "app/base.html" %} {% block title %}Upload Statements{% endblock %}
+{% block nav_upload %}active{% endblock %} {% block content %}
+<div class="row g-4">
+  <!-- Upload card -->
+  <div class="col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-header bg-primary text-white fw-semibold">
+        <i class="bi bi-cloud-upload me-1"></i> Upload Statements
+      </div>
+      <div class="card-body">
+        <form
+          id="upload-form"
+          hx-post="/upload/"
+          hx-target="#statement-list"
+          hx-swap="outerHTML"
+          hx-encoding="multipart/form-data"
+          hx-indicator="#upload-spinner"
+        >
+          {% csrf_token %}
+
+          <div class="drop-zone mb-3" id="drop-zone">
+            <i class="bi bi-file-earmark-pdf fs-1 text-danger"></i>
+            <p class="mt-2 mb-0 text-muted" id="drop-label">
+              Drag &amp; drop PDFs here, or click to browse
+            </p>
+            <input type="file" name="pdfs" id="pdfs" multiple accept=".pdf" />
+          </div>
+
+          <div class="mb-3">
+            <label for="password" class="form-label"
+              >PDF Password
+              <span class="text-muted small">(leave blank if none)</span></label
+            >
+            <input
+              type="password"
+              class="form-control"
+              id="password"
+              name="password"
+              autocomplete="current-password"
+            />
+          </div>
+
+          <div class="d-flex align-items-center gap-2">
+            <button type="submit" class="btn btn-primary" id="upload-btn">
+              <i class="bi bi-upload me-1"></i>Process
+            </button>
+            <span
+              id="upload-spinner"
+              class="spinner-border spinner-border-sm text-primary"
+              role="status"
+            >
+              <span class="visually-hidden">Processing…</span>
+            </span>
+            <span class="htmx-request text-muted small"
+              >Extracting transactions…</span
+            >
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card shadow-sm mt-3">
+      <div class="card-body text-muted small">
+        <i class="bi bi-info-circle me-1"></i>
+        Supports Maybank current &amp; savings account PDF statements. Multiple
+        files can be uploaded at once. Each PDF is processed independently —
+        duplicates are allowed.
+      </div>
+    </div>
+  </div>
+
+  <!-- Statement list -->
+  <div class="col-lg-7">{% include "app/partials/statement_list.html" %}</div>
+</div>
+{% endblock %}

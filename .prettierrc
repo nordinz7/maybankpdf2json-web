@@ -1,0 +1,14 @@
+{
+  "overrides": [
+    {
+      "files": [
+        "*.html"
+      ],
+      "options": {
+        "parser": "html",
+        "htmlWhitespaceSensitivity": "ignore",
+        "embeddedLanguageFormatting": "off"
+      }
+    }
+  ]
+}

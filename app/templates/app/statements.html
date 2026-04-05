@@ -1,0 +1,14 @@
+{% extends "app/base.html" %}
+{% block title %}Statements{% endblock %}
+{% block nav_statements %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0"><i class="bi bi-file-earmark-text me-1"></i>Uploaded Statements</h4>
+  <a href="/" class="btn btn-sm btn-primary">
+    <i class="bi bi-upload me-1"></i>Upload More
+  </a>
+</div>
+
+{% include "app/partials/statement_list.html" %}
+{% endblock %}

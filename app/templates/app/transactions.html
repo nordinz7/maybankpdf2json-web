@@ -1,0 +1,94 @@
+{% extends "app/base.html" %}
+{% block title %}Transactions{% endblock %}
+{% block nav_transactions %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0"><i class="bi bi-list-ul me-1"></i>Transactions</h4>
+  <span class="text-muted small">
+    {{ transactions|length }} record(s)
+  </span>
+</div>
+
+<!-- Search / filter bar -->
+<div class="card shadow-sm mb-3">
+  <div class="card-body py-2">
+    <form id="search-form"
+          hx-get="/transactions/"
+          hx-target="#tx-tbody"
+          hx-swap="innerHTML"
+          hx-trigger="input delay:300ms from:#q, change from:#account-select, change from:#stmt-select"
+          hx-push-url="true">
+
+      <div class="row g-2 align-items-end">
+        <div class="col-md-5">
+          <label class="form-label mb-1 small fw-semibold">Search description</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" id="q" name="q" value="{{ q }}"
+                   placeholder="e.g. SHOPEE, GRAB, ATM…">
+          </div>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label mb-1 small fw-semibold">Account</label>
+          <select class="form-select" id="account-select" name="account">
+            <option value="">All accounts</option>
+            {% for acc in accounts %}
+              <option value="{{ acc }}" {% if account == acc %}selected{% endif %}>{{ acc }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label mb-1 small fw-semibold">Statement</label>
+          <select class="form-select" id="stmt-select" name="statement">
+            <option value="">All statements</option>
+            {% for s in all_statements %}
+              <option value="{{ s.id }}" {% if stmt_id == s.id|stringformat:"s" %}selected{% endif %}>
+                {{ s.filename }} ({{ s.statement_date|default:"?" }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-1">
+          <a href="/transactions/" class="btn btn-outline-secondary w-100" title="Clear filters">
+            <i class="bi bi-x-lg"></i>
+          </a>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Transactions table -->
+<div class="card shadow-sm">
+  <div class="table-responsive">
+    <table class="table table-hover table-sm mb-0">
+      <thead class="table-dark">
+        <tr>
+          <th style="width:90px">Date</th>
+          <th>Description</th>
+          <th class="text-end" style="width:110px">Amount (RM)</th>
+          <th class="text-end" style="width:120px">Balance (RM)</th>
+          <th style="width:140px">Account</th>
+        </tr>
+      </thead>
+      <tbody id="tx-tbody">
+        {% include "app/partials/transaction_rows.html" %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Keep result count in heading up to date after HTMX swaps
+  document.body.addEventListener("htmx:afterSwap", () => {
+    const rows = document.querySelectorAll("#tx-tbody tr.tx-row").length;
+    document.querySelector(".text-muted.small").textContent = rows + " record(s)";
+  });
+</script>
+{% endblock %}

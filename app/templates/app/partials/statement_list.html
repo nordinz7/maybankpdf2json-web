@@ -1,0 +1,81 @@
+<div id="statement-list">
+<div class="card shadow-sm">
+  <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-archive me-1"></i>Uploaded Statements</span>
+    <span class="badge bg-secondary">{{ statements|length }}</span>
+  </div>
+  {% if statements %}
+  <div class="table-responsive">
+    <table class="table table-hover table-sm mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>File</th>
+          <th>Account</th>
+          <th>Date</th>
+          <th class="text-end">Txns</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in statements %}
+        <tr>
+          <td class="text-truncate" style="max-width:160px" title="{{ s.filename }}">
+            <i class="bi bi-file-earmark-pdf text-danger me-1"></i>
+            {{ s.filename }}
+          </td>
+          <td class="font-monospace small">{{ s.account_number|default:"—" }}</td>
+          <td class="small">{{ s.statement_date|default:"—" }}</td>
+          <td class="text-end small">
+            {% if s.status == "done" %}
+              {{ s.transactions.count }}
+            {% else %}
+              —
+            {% endif %}
+          </td>
+          <td>
+            {% if s.status == "done" %}
+              <span class="badge badge-done rounded-pill">Done</span>
+            {% elif s.status == "processing" %}
+              <span class="badge badge-processing rounded-pill">Processing</span>
+            {% else %}
+              <span class="badge badge-error rounded-pill" title="{{ s.error_message }}">Error</span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            {% if s.status == "done" %}
+            <a href="/transactions/?statement={{ s.id }}"
+               class="btn btn-xs btn-outline-primary py-0 px-1 me-1 small"
+               title="View transactions">
+              <i class="bi bi-list-ul"></i>
+            </a>
+            {% endif %}
+            <button class="btn btn-xs btn-outline-danger py-0 px-1 small"
+                    hx-delete="/statements/{{ s.id }}/delete/"
+                    hx-target="#statement-list"
+                    hx-swap="outerHTML"
+                    hx-confirm="Delete {{ s.filename }} and all its transactions?"
+                    title="Delete">
+              <i class="bi bi-trash"></i>
+            </button>
+          </td>
+        </tr>
+        {% if s.status == "error" and s.error_message %}
+        <tr class="table-danger">
+          <td colspan="6" class="small text-danger py-1">
+            <i class="bi bi-exclamation-triangle me-1"></i>{{ s.error_message }}
+          </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body text-center text-muted py-4">
+    <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+    No statements uploaded yet.
+  </div>
+  {% endif %}
+</div>
+</div>

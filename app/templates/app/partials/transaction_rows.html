@@ -1,0 +1,23 @@
+{% if transactions %} {% for tx in transactions %}
+<tr
+  class="tx-row {% if tx.trans < 0 %}table-danger table-danger-soft{% endif %}"
+>
+  <td class="small font-monospace">{{ tx.date }}</td>
+  <td class="small">{{ tx.desc|linebreaksbr }}</td>
+  <td
+    class="text-end small font-monospace {% if tx.trans < 0 %}text-danger fw-semibold{% else %}text-success fw-semibold{% endif %}"
+  >
+    {% if tx.trans >= 0 %}+{% endif %}{{ tx.trans|floatformat:2 }}
+  </td>
+  <td class="text-end small font-monospace">{{ tx.bal|floatformat:2 }}</td>
+  <td class="small font-monospace text-muted">
+    {{ tx.statement.account_number|default:"—" }}
+  </td>
+</tr>
+{% endfor %} {% else %}
+<tr>
+  <td colspan="5" class="text-center text-muted py-4">
+    <i class="bi bi-search me-1"></i>No transactions found.
+  </td>
+</tr>
+{% endif %}
