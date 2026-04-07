@@ -2,37 +2,25 @@ from django.db import models
 
 
 class Statement(models.Model):
-    STATUS_PROCESSING = "processing"
-    STATUS_DONE = "done"
-    STATUS_ERROR = "error"
-    STATUS_CHOICES = [
-        (STATUS_PROCESSING, "Processing"),
-        (STATUS_DONE, "Done"),
-        (STATUS_ERROR, "Error"),
-    ]
-
-    filename = models.CharField(max_length=255, blank=True, default="")
-    account_number = models.CharField(max_length=64, null=True, blank=True)
-    statement_date = models.CharField(max_length=16, null=True, blank=True)
+    account_number = models.CharField(max_length=64)
+    statement_date = models.CharField(max_length=16)
     uploaded_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(
-        max_length=16, choices=STATUS_CHOICES, default=STATUS_PROCESSING
-    )
-    error_message = models.TextField(null=True, blank=True)
 
     class Meta:
         ordering = ["-uploaded_at"]
         constraints = [
             models.UniqueConstraint(
-                fields=["statement_date"],
-                condition=models.Q(statement_date__isnull=False)
-                & ~models.Q(statement_date=""),
-                name="uniq_statement_date_non_empty",
-            )
+                fields=["account_number", "statement_date"],
+                name="uniq_account_statement_date_non_empty",
+            ),
+            models.CheckConstraint(
+                check=~models.Q(account_number="") & ~models.Q(statement_date=""),
+                name="statement_account_and_date_non_empty",
+            ),
         ]
 
     def __str__(self) -> str:
-        return self.statement_date or self.filename or f"Statement #{self.pk}"
+        return self.statement_date or f"Statement #{self.pk}"
 
 
 class Transaction(models.Model):
@@ -45,7 +33,7 @@ class Transaction(models.Model):
     bal = models.FloatField()
 
     class Meta:
-        ordering = ["id"]
+        ordering = ["-id"]
 
     def __str__(self) -> str:
         return f"{self.date} {self.desc[:40]}"

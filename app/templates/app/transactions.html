@@ -46,7 +46,7 @@
             <option value="">All statements</option>
             {% for s in all_statements %}
               <option value="{{ s.id }}" {% if stmt_id == s.id|stringformat:"s" %}selected{% endif %}>
-                {{ s.filename }} ({{ s.statement_date|default:"?" }})
+                {{ s.id }} ({{ s.statement_date|default:"?" }})
               </option>
             {% endfor %}
           </select>

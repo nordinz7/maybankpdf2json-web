@@ -33,6 +33,28 @@ def ordered_statements():
     ).order_by("-sort_date", "-uploaded_at")
 
 
+def ordered_transactions(queryset):
+    """Return transactions sorted by latest transaction date first.
+
+    date is stored as dd/mm/yy, so compute a sortable yymmdd key.
+    """
+    return queryset.annotate(
+        sort_date=Case(
+            When(
+                date__contains="/",
+                then=Concat(
+                    Value("20"),
+                    Substr("date", 7, 2),
+                    Substr("date", 4, 2),
+                    Substr("date", 1, 2),
+                ),
+            ),
+            default=Value(""),
+            output_field=CharField(),
+        )
+    ).order_by("-sort_date", "-id")
+
+
 # ---------------------------------------------------------------------------
 # Upload page (GET + POST)
 # ---------------------------------------------------------------------------
@@ -60,10 +82,9 @@ def upload(request: HttpRequest) -> HttpResponse:
     pdf_files = [f for f in files if f.name.lower().endswith(".pdf")]
 
     if not pdf_files:
-        Statement.objects.create(
-            filename="(no-valid-pdf)",
-            status=Statement.STATUS_ERROR,
-            error_message="No valid PDF files uploaded.",
+        statements = ordered_statements()
+        return render(
+            request, "app/partials/statement_list.html", {"statements": statements}
         )
 
     for f in pdf_files:
@@ -72,32 +93,26 @@ def upload(request: HttpRequest) -> HttpResponse:
             extractor = MaybankPdf2Json(buf, pwd=password or None)
             result = extractor.json()
 
-            statement_date = result.get("statement_date")
-            account_number = result.get("account_number")
+            statement_date = (result.get("statement_date") or "").strip()
+            account_number = (result.get("account_number") or "").strip()
+
+            if not statement_date or not account_number:
+                continue
 
             existing_stmt = None
-            if statement_date:
+            if statement_date and account_number:
                 existing_stmt = Statement.objects.filter(
-                    statement_date=statement_date
+                    statement_date=statement_date,
+                    account_number=account_number,
                 ).first()
 
             if existing_stmt and not override_existing:
-                Statement.objects.create(
-                    status=Statement.STATUS_ERROR,
-                    filename=f.name,
-                    account_number=account_number,
-                    error_message=(
-                        f"Skipped: statement date {statement_date} already exists. "
-                        "Enable override to replace it."
-                    ),
-                )
                 continue
 
             if existing_stmt and override_existing:
                 existing_stmt.delete()
 
             statement = Statement.objects.create(
-                status=Statement.STATUS_PROCESSING,
                 statement_date=statement_date,
                 account_number=account_number,
             )
@@ -114,25 +129,11 @@ def upload(request: HttpRequest) -> HttpResponse:
             ]
             Transaction.objects.bulk_create(transactions)
 
-            statement.status = Statement.STATUS_DONE
-            statement.save(update_fields=["status"])
-
         except IntegrityError:
-            Statement.objects.create(
-                status=Statement.STATUS_ERROR,
-                filename=f.name,
-                error_message=(
-                    f"Duplicate statement date {statement_date}. "
-                    "This statement is already uploaded."
-                ),
-            )
+            continue
 
-        except Exception as exc:  # noqa: BLE001
-            Statement.objects.create(
-                status=Statement.STATUS_ERROR,
-                filename=f.name,
-                error_message=str(exc),
-            )
+        except Exception:  # noqa: BLE001
+            continue
 
     statements = ordered_statements()
     return render(
@@ -174,12 +175,9 @@ def transactions(request: HttpRequest) -> HttpResponse:
     if stmt_id:
         qs = qs.filter(statement_id=stmt_id)
 
-    accounts = (
-        Statement.objects.filter(status=Statement.STATUS_DONE)
-        .exclude(account_number=None)
-        .values_list("account_number", flat=True)
-        .distinct()
-    )
+    qs = ordered_transactions(qs)
+
+    accounts = Statement.objects.values_list("account_number", flat=True).distinct()
 
     context = {
         "transactions": qs,
@@ -187,7 +185,7 @@ def transactions(request: HttpRequest) -> HttpResponse:
         "account": account,
         "stmt_id": stmt_id,
         "accounts": accounts,
-        "all_statements": ordered_statements().filter(status=Statement.STATUS_DONE),
+        "all_statements": ordered_statements(),
     }
 
     # If HTMX request, return only the rows partial
