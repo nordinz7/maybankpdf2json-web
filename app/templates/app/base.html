@@ -690,6 +690,70 @@
       .htmx-request #upload-spinner { display: inline-block; }
       .htmx-request #upload-btn { display: none; }
 
+      /* Compact upload bar */
+      .upload-bar {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+        padding: 0.6rem 0.85rem;
+      }
+      .upload-bar-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+      .upload-drop-strip {
+        flex: 1 1 180px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.42rem 0.75rem;
+        border-radius: var(--radius);
+        border: 1.5px dashed var(--border-strong);
+        background: var(--surface-2);
+        cursor: pointer;
+        transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
+        min-width: 0;
+        overflow: hidden;
+      }
+      .upload-drop-strip:hover,
+      .upload-drop-strip.dragover {
+        border-color: var(--accent);
+        background: color-mix(in oklab, var(--accent) 7%, var(--surface-2));
+      }
+      .upload-drop-strip input[type="file"] { display: none; }
+      .upload-drop-label {
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .upload-bar-btn {
+        flex-shrink: 0;
+        padding: 0.35rem 0.6rem;
+      }
+      .upload-bar-pwd {
+        width: 160px;
+        flex-shrink: 0;
+      }
+      .upload-override-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        cursor: pointer;
+        white-space: nowrap;
+        flex-shrink: 0;
+        user-select: none;
+      }
+      @media (max-width: 640px) {
+        .upload-bar-pwd { width: 120px; }
+        .upload-drop-strip { flex-basis: 100%; }
+      }
+
       .htmx-indicator { opacity: 0; transition: opacity 0.2s var(--ease); }
       .htmx-request .htmx-indicator { opacity: 1; }
       .htmx-request.htmx-indicator { opacity: 1; }
@@ -933,18 +997,15 @@
         input.addEventListener("change", () => setPdfFiles(input.files));
 
         function updateLabel(skipped = 0) {
-          const label = zone.querySelector("#drop-label");
-          const hint = zone.querySelector("#drop-hint");
+          const label = document.getElementById("drop-label");
+          if (!label) return;
           if (input.files && input.files.length > 0) {
-            label.textContent = `${input.files.length} PDF file${input.files.length > 1 ? "s" : ""} ready`;
-            if (hint) {
-              hint.textContent = skipped > 0
-                ? `${skipped} non-PDF file${skipped > 1 ? "s" : ""} skipped — click process below`
-                : "Click process to extract transactions";
-            }
+            const s = input.files.length > 1 ? "s" : "";
+            label.textContent = skipped > 0
+              ? `${input.files.length} PDF${s} ready · ${skipped} non-PDF${skipped > 1 ? "s" : ""} skipped`
+              : `${input.files.length} PDF file${s} ready`;
           } else {
             label.textContent = "Drop PDFs or click to browse";
-            if (hint) hint.textContent = "Multiple files supported · password-protected OK";
           }
         }
       });

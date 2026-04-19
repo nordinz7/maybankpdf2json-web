@@ -323,7 +323,7 @@ def transactions(request: HttpRequest) -> HttpResponse:
     paginator = Paginator(qs, 50)
     page_obj = paginator.get_page(page_number)
 
-    accounts = Statement.objects.values_list("account_number", flat=True).distinct()
+    accounts = Statement.objects.order_by("account_number").values_list("account_number", flat=True).distinct()
 
     context = {
         "transactions": page_obj.object_list,

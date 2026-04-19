@@ -15,80 +15,66 @@
   </div>
 </div>
 
-<div id="upload-panel" class="panel mb-4" style="max-width: 760px;">
-  <div class="panel-header">
-    <h2 class="panel-title"><i class="bi bi-cloud-upload"></i>Upload statements</h2>
-  </div>
-  <div class="panel-body">
-    <form
-      id="upload-form"
-      method="post"
-      action="/upload/"
-      enctype="multipart/form-data"
-      hx-post="/upload/"
-      hx-swap="none"
-      hx-encoding="multipart/form-data"
-      hx-indicator="#upload-spinner"
-    >
-      {% csrf_token %}
+<div class="upload-bar mb-4">
+  <form
+    id="upload-form"
+    method="post"
+    action="/upload/"
+    enctype="multipart/form-data"
+    hx-post="/upload/"
+    hx-swap="none"
+    hx-encoding="multipart/form-data"
+    hx-indicator="#upload-spinner"
+  >
+    {% csrf_token %}
+    <div class="upload-bar-row">
 
-      <div class="drop-zone mb-3" id="drop-zone">
-        <div class="drop-zone-icon"><i class="bi bi-filetype-pdf"></i></div>
-        <p id="drop-label">Drop PDFs or click to browse</p>
-        <p class="drop-hint" id="drop-hint">Multiple files supported · password-protected OK</p>
+      <!-- File pick target -->
+      <div id="drop-zone" class="upload-drop-strip" title="Click to pick files or drag PDFs here">
+        <i class="bi bi-filetype-pdf" style="font-size:1rem; color: var(--accent-hover); flex-shrink:0;"></i>
+        <span id="drop-label" class="upload-drop-label">Drop PDFs or click to browse</span>
         <input type="file" name="pdfs" id="pdfs" multiple accept=".pdf" />
         <input type="file" id="pdf-folder" webkitdirectory directory multiple />
       </div>
 
-      <div class="mb-3">
-        <button type="button" class="btn btn-outline-secondary btn-sm" id="pick-folder-btn">
-          <i class="bi bi-folder2-open"></i>Select folder
-        </button>
-      </div>
+      <!-- Folder pick -->
+      <button type="button" class="btn btn-outline-secondary btn-sm upload-bar-btn" id="pick-folder-btn" title="Pick a folder">
+        <i class="bi bi-folder2-open"></i>
+      </button>
 
-      <div class="mb-3">
-        <label for="password" class="form-label">PDF password <span class="text-faint" style="font-weight:400;">(optional)</span></label>
-        <input
-          type="password"
-          class="form-control"
-          id="password"
-          name="password"
-          placeholder="Leave blank if none"
-          autocomplete="current-password"
-        />
-      </div>
+      <!-- Password -->
+      <input
+        type="password"
+        class="form-control form-control-sm upload-bar-pwd"
+        id="password"
+        name="password"
+        placeholder="Password (optional)"
+        autocomplete="current-password"
+      />
 
-      <label class="d-flex align-items-start gap-2 p-3 rounded-3 mb-3" style="background: var(--surface-2); border: 1px solid var(--border); cursor: pointer;">
+      <!-- Override toggle -->
+      <label class="upload-override-label" title="Replace existing statement for the same account + date">
         <input
-          class="form-check-input mt-0"
+          class="form-check-input"
           type="checkbox"
           id="override_existing"
           name="override_existing"
           value="1"
-          style="margin-top: 2px !important;"
         />
-        <div>
-          <div style="font-size:0.88rem; font-weight:500;">Override duplicates</div>
-          <div class="form-text" style="margin-top:2px;">Replace existing statement when the same account + date already exists. Off by default.</div>
-        </div>
+        <span>Override dupes</span>
       </label>
 
-      <div class="d-flex align-items-center gap-2">
-        <button type="submit" class="btn btn-accent" id="upload-btn">
-          <i class="bi bi-lightning-charge-fill"></i>Process
-        </button>
-        <span
-          id="upload-spinner"
-          class="spinner-border spinner-border-sm"
-          role="status"
-          style="color: var(--accent);"
-        >
-          <span class="visually-hidden">Processing…</span>
-        </span>
-        <span class="htmx-request text-muted small htmx-indicator">Extracting transactions…</span>
-      </div>
-    </form>
-  </div>
+      <!-- Submit -->
+      <button type="submit" class="btn btn-accent btn-sm" id="upload-btn">
+        <i class="bi bi-lightning-charge-fill"></i>Process
+      </button>
+      <span id="upload-spinner" class="spinner-border spinner-border-sm" role="status" style="color: var(--accent);">
+        <span class="visually-hidden">Processing…</span>
+      </span>
+      <span class="htmx-request text-muted small htmx-indicator" style="white-space:nowrap;">Extracting…</span>
+
+    </div>
+  </form>
 </div>
 
 {% include "app/partials/statement_list.html" %}
