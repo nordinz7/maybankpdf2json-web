@@ -1,26 +1,28 @@
 <div id="statement-list">
-<div class="card shadow-sm">
-  <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
-    <span><i class="bi bi-archive me-1"></i>Uploaded Statements</span>
-    <span class="badge bg-secondary">{{ statements|length }}</span>
+<div class="panel">
+  <div class="panel-header">
+    <h2 class="panel-title"><i class="bi bi-archive"></i>Uploaded statements</h2>
+    <span class="pill">{{ statements|length }} {% if statements|length == 1 %}file{% else %}files{% endif %}</span>
   </div>
   {% if statements %}
   <div class="table-responsive">
-    <table class="table table-hover table-sm mb-0">
-      <thead class="table-light">
+    <table class="table table-hover mb-0">
+      <thead>
         <tr>
-          <th>Statement Date</th>
-          <th>Account Number</th>
-          <th>Upload Date</th>
-          <th class="text-end" style="width: 90px;">Action</th>
+          <th>Statement</th>
+          <th>Account</th>
+          <th>Uploaded</th>
+          <th class="text-end" style="width: 80px;"></th>
         </tr>
       </thead>
       <tbody>
         {% for s in statements %}
-        <tr>
-          <td class="small">{{ s.statement_date|default:"—" }}</td>
-          <td class="font-monospace small">{{ s.account_number|default:"—" }}</td>
-          <td class="small">{{ s.uploaded_at|date:"Y-m-d H:i" }}</td>
+        <tr class="stmt-row">
+          <td>
+            <div class="font-mono" style="font-weight:600; color: var(--text);">{{ s.statement_date|default:"—" }}</div>
+          </td>
+          <td class="font-mono text-muted" style="font-size:0.85rem;">{{ s.account_number|default:"—" }}</td>
+          <td class="text-muted" style="font-size:0.82rem;">{{ s.uploaded_at|date:"M j, Y · H:i" }}</td>
           <td class="text-end">
             <form method="post" class="d-inline"
                   hx-post="/statements/{{ s.id }}/delete/"
@@ -28,7 +30,7 @@
                   hx-swap="outerHTML"
                   hx-confirm="Delete statement {{ s.statement_date|default:'?' }} for account {{ s.account_number|default:'?' }}?">
               {% csrf_token %}
-              <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete statement">
+              <button type="submit" class="btn btn-outline-danger btn-icon btn-sm" title="Delete statement" aria-label="Delete statement">
                 <i class="bi bi-trash"></i>
               </button>
             </form>
@@ -39,31 +41,32 @@
     </table>
   </div>
   {% else %}
-  <div class="card-body text-center text-muted py-4">
-    <i class="bi bi-inbox fs-3 d-block mb-2"></i>
-    No statements uploaded yet.
+  <div class="empty-state">
+    <div class="empty-state-icon"><i class="bi bi-inbox"></i></div>
+    <div style="font-weight:500; color: var(--text);">No statements yet</div>
+    <div class="small mt-1">Upload your first PDF to get started.</div>
   </div>
   {% endif %}
 </div>
 
 {% if upload_results %}
-<div class="card shadow-sm mt-3">
-  <div class="card-header fw-semibold">
-    <i class="bi bi-clipboard-check me-1"></i>Upload Status
+<div class="panel mt-3">
+  <div class="panel-header">
+    <h2 class="panel-title"><i class="bi bi-clipboard-check"></i>Upload results</h2>
   </div>
-  <ul class="list-group list-group-flush">
+  <ul class="list-unstyled mb-0">
     {% for r in upload_results %}
-    <li class="list-group-item d-flex justify-content-between align-items-start">
-      <div class="me-2">
-        <div class="small fw-semibold text-break">{{ r.file }}</div>
-        <div class="small text-muted">{{ r.message }}</div>
+    <li class="d-flex justify-content-between align-items-start gap-3 px-3 py-3" style="border-bottom: 1px solid var(--border);">
+      <div class="me-2 flex-grow-1" style="min-width: 0;">
+        <div style="font-size:0.88rem; font-weight:500;" class="text-break">{{ r.file }}</div>
+        <div class="small text-muted mt-1">{{ r.message }}</div>
       </div>
       {% if r.status == "success" %}
-      <span class="badge bg-success">Success</span>
+      <span class="pill pill-success"><i class="bi bi-check-circle-fill"></i>Success</span>
       {% elif r.status == "warning" %}
-      <span class="badge text-dark" style="background-color: #ffc107;">Skipped</span>
+      <span class="pill pill-warning"><i class="bi bi-dash-circle-fill"></i>Skipped</span>
       {% else %}
-      <span class="badge bg-danger">Error</span>
+      <span class="pill pill-danger"><i class="bi bi-x-circle-fill"></i>Error</span>
       {% endif %}
     </li>
     {% endfor %}

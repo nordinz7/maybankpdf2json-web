@@ -1,23 +1,25 @@
-{% if transactions %} {% for tx in transactions %}
-<tr
-  class="tx-row {% if tx.trans < 0 %}table-danger table-danger-soft{% endif %}"
->
-  <td class="small font-monospace">{{ tx.date }}</td>
-  <td class="small">{{ tx.desc|linebreaksbr }}</td>
-  <td
-    class="text-end small font-monospace {% if tx.trans < 0 %}text-danger fw-semibold{% else %}text-success fw-semibold{% endif %}"
-  >
-    {% if tx.trans >= 0 %}+{% endif %}{{ tx.trans|floatformat:2 }}
-  </td>
-  <td class="text-end small font-monospace">{{ tx.bal|floatformat:2 }}</td>
-  <td class="small font-monospace text-muted">
-    {{ tx.statement.account_number|default:"—" }}
-  </td>
-</tr>
-{% endfor %} {% else %}
-<tr>
-  <td colspan="5" class="text-center text-muted py-4">
-    <i class="bi bi-search me-1"></i>No transactions found.
-  </td>
-</tr>
+{% if transactions %}
+  {% for tx in transactions %}
+  <tr class="tx-row">
+    <td class="font-mono text-muted" style="font-size: 0.82rem; white-space: nowrap;">{{ tx.date }}</td>
+    <td style="font-size: 0.88rem; color: var(--text);">{{ tx.desc|linebreaksbr }}</td>
+    <td class="text-end">
+      <span class="amount-chip {% if tx.trans < 0 %}amount-negative{% else %}amount-positive{% endif %}">
+        {% if tx.trans >= 0 %}+{% endif %}{{ tx.trans|floatformat:2 }}
+      </span>
+    </td>
+    <td class="text-end amount text-muted">{{ tx.bal|floatformat:2 }}</td>
+    <td class="font-mono text-muted" style="font-size: 0.8rem;">{{ tx.statement.account_number|default:"—" }}</td>
+  </tr>
+  {% endfor %}
+{% else %}
+  <tr>
+    <td colspan="5">
+      <div class="empty-state" style="padding: 2.5rem 1rem;">
+        <div class="empty-state-icon"><i class="bi bi-search"></i></div>
+        <div style="font-weight:500; color: var(--text);">No transactions match</div>
+        <div class="small mt-1">Try a different search term or clear your filters.</div>
+      </div>
+    </td>
+  </tr>
 {% endif %}

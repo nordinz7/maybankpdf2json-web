@@ -1,13 +1,40 @@
-{% extends "app/base.html" %} {% block title %}Upload Statements{% endblock %}
-{% block nav_upload %}active{% endblock %} {% block content %}
+{% extends "app/base.html" %}
+{% block title %}Upload · Maybank Statements{% endblock %}
+{% block nav_upload %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Extract & organize your statements</h1>
+    <div class="page-subtitle">Drop Maybank PDF statements — we’ll parse them into clean, searchable transactions.</div>
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat-card stat-accent">
+    <div class="stat-label"><i class="bi bi-file-earmark-text"></i>Statements</div>
+    <div class="stat-value">{{ stats.total_statements }}</div>
+    <div class="stat-hint">Processed files</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label"><i class="bi bi-list-ul"></i>Transactions</div>
+    <div class="stat-value">{{ stats.total_transactions }}</div>
+    <div class="stat-hint">Rows extracted</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label"><i class="bi bi-person-vcard"></i>Accounts</div>
+    <div class="stat-value">{{ stats.total_accounts }}</div>
+    <div class="stat-hint">Unique account numbers</div>
+  </div>
+</div>
+
 <div class="row g-4">
-  <!-- Upload card -->
   <div class="col-lg-5">
-    <div class="card shadow-sm">
-      <div class="card-header bg-primary text-white fw-semibold">
-        <i class="bi bi-cloud-upload me-1"></i> Upload Statements
+    <div class="panel">
+      <div class="panel-header">
+        <h2 class="panel-title"><i class="bi bi-cloud-upload"></i>Upload statements</h2>
       </div>
-      <div class="card-body">
+      <div class="panel-body">
         <form
           id="upload-form"
           method="post"
@@ -22,80 +49,70 @@
           {% csrf_token %}
 
           <div class="drop-zone mb-3" id="drop-zone">
-            <i class="bi bi-file-earmark-pdf fs-1 text-danger"></i>
-            <p class="mt-2 mb-0 text-muted" id="drop-label">
-              Drag &amp; drop PDFs here, or click to browse
-            </p>
+            <div class="drop-zone-icon"><i class="bi bi-filetype-pdf"></i></div>
+            <p id="drop-label">Drop PDFs or click to browse</p>
+            <p class="drop-hint" id="drop-hint">Multiple files supported · password-protected OK</p>
             <input type="file" name="pdfs" id="pdfs" multiple accept=".pdf" />
             <input type="file" id="pdf-folder" webkitdirectory directory multiple />
           </div>
 
           <div class="mb-3">
             <button type="button" class="btn btn-outline-secondary btn-sm" id="pick-folder-btn">
-              <i class="bi bi-folder2-open me-1"></i>Select Folder (PDFs only)
+              <i class="bi bi-folder2-open"></i>Select folder
             </button>
           </div>
 
           <div class="mb-3">
-            <label for="password" class="form-label"
-              >PDF Password
-              <span class="text-muted small">(leave blank if none)</span></label
-            >
+            <label for="password" class="form-label">PDF password <span class="text-faint" style="font-weight:400;">(optional)</span></label>
             <input
               type="password"
               class="form-control"
               id="password"
               name="password"
+              placeholder="Leave blank if none"
               autocomplete="current-password"
             />
           </div>
 
-          <div class="form-check mb-3">
+          <label class="d-flex align-items-start gap-2 p-3 rounded-3 mb-3" style="background: var(--surface-2); border: 1px solid var(--border); cursor: pointer;">
             <input
-              class="form-check-input"
+              class="form-check-input mt-0"
               type="checkbox"
               id="override_existing"
               name="override_existing"
               value="1"
+              style="margin-top: 2px !important;"
             />
-            <label class="form-check-label" for="override_existing">
-              Override existing statement when same date already exists
-            </label>
-            <div class="form-text">
-              If unchecked, duplicates are skipped.
+            <div>
+              <div style="font-size:0.88rem; font-weight:500;">Override duplicates</div>
+              <div class="form-text" style="margin-top:2px;">Replace existing statement when the same account + date already exists. Off by default.</div>
             </div>
-          </div>
+          </label>
 
           <div class="d-flex align-items-center gap-2">
-            <button type="submit" class="btn btn-primary" id="upload-btn">
-              <i class="bi bi-upload me-1"></i>Process
+            <button type="submit" class="btn btn-accent" id="upload-btn">
+              <i class="bi bi-lightning-charge-fill"></i>Process
             </button>
             <span
               id="upload-spinner"
-              class="spinner-border spinner-border-sm text-primary"
+              class="spinner-border spinner-border-sm"
               role="status"
+              style="color: var(--accent);"
             >
               <span class="visually-hidden">Processing…</span>
             </span>
-            <span class="htmx-request text-muted small"
-              >Extracting transactions…</span
-            >
+            <span class="htmx-request text-muted small htmx-indicator">Extracting transactions…</span>
           </div>
         </form>
       </div>
     </div>
 
-    <div class="card shadow-sm mt-3">
-      <div class="card-body text-muted small">
-        <i class="bi bi-info-circle me-1"></i>
-        Supports Maybank current &amp; savings account PDF statements. Multiple
-        files can be uploaded at once. Each PDF is processed independently.
-        Duplicate statement dates are skipped unless override is enabled.
-      </div>
+    <div class="mt-3 text-muted small" style="padding: 0 0.25rem;">
+      <i class="bi bi-info-circle me-1"></i>
+      Supports Maybank current &amp; savings account PDFs. Files are processed independently — partial failures don’t block the rest.
     </div>
   </div>
 
-  <!-- Statement list -->
   <div class="col-lg-7">{% include "app/partials/statement_list.html" %}</div>
 </div>
 {% endblock %}

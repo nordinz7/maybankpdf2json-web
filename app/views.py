@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 
 from django.db import IntegrityError
-from django.db.models import Case, CharField, Q, Value, When
+from django.db.models import Case, CharField, Count, Q, Sum, Value, When
 from django.db.models.functions import Abs, Concat, Substr
 from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse
@@ -108,7 +108,16 @@ def ordered_transactions(queryset):
 def index(request: HttpRequest) -> HttpResponse:
     """Main upload page."""
     statements = ordered_statements()
-    return render(request, "app/index.html", {"statements": statements})
+    stats = {
+        "total_statements": Statement.objects.count(),
+        "total_transactions": Transaction.objects.count(),
+        "total_accounts": Statement.objects.values("account_number").distinct().count(),
+    }
+    return render(
+        request,
+        "app/index.html",
+        {"statements": statements, "stats": stats},
+    )
 
 
 def upload(request: HttpRequest) -> HttpResponse:
@@ -310,6 +319,23 @@ def transactions(request: HttpRequest) -> HttpResponse:
         qs = qs.filter(sort_date__lte=date_to_key)
 
     qs = qs.order_by("-sort_date", "-id")
+
+    aggregates = qs.aggregate(
+        inflow=Sum("trans", filter=Q(trans__gt=0)),
+        outflow=Sum("trans", filter=Q(trans__lt=0)),
+        inflow_count=Count("id", filter=Q(trans__gt=0)),
+        outflow_count=Count("id", filter=Q(trans__lt=0)),
+    )
+    inflow = aggregates["inflow"] or 0.0
+    outflow = aggregates["outflow"] or 0.0
+    summary = {
+        "inflow": inflow,
+        "outflow": outflow,
+        "net": inflow + outflow,
+        "inflow_count": aggregates["inflow_count"] or 0,
+        "outflow_count": aggregates["outflow_count"] or 0,
+    }
+
     paginator = Paginator(qs, 50)
     page_obj = paginator.get_page(page_number)
 
@@ -319,6 +345,7 @@ def transactions(request: HttpRequest) -> HttpResponse:
         "transactions": page_obj.object_list,
         "page_obj": page_obj,
         "total_transactions": paginator.count,
+        "summary": summary,
         "q": q,
         "account": account,
         "stmt_id": stmt_id,
@@ -333,9 +360,8 @@ def transactions(request: HttpRequest) -> HttpResponse:
     context["query_without_page"] = query_without_page.urlencode()
     context["page_sep"] = "&" if context["query_without_page"] else ""
 
-    # If HTMX request, return only the rows partial
     if request.headers.get("HX-Request"):
-        return render(request, "app/partials/transaction_rows.html", context)
+        return render(request, "app/partials/transaction_results.html", context)
 
     return render(request, "app/transactions.html", context)
 

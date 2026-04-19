@@ -1,0 +1,72 @@
+<div id="tx-results">
+  <div class="stat-grid">
+    <div class="stat-card stat-success">
+      <div class="stat-label"><i class="bi bi-arrow-down-left-circle"></i>Inflow</div>
+      <div class="stat-value">+{{ summary.inflow|floatformat:2 }}</div>
+      <div class="stat-hint">{{ summary.inflow_count }} credit{{ summary.inflow_count|pluralize }}</div>
+    </div>
+    <div class="stat-card stat-danger">
+      <div class="stat-label"><i class="bi bi-arrow-up-right-circle"></i>Outflow</div>
+      <div class="stat-value">{{ summary.outflow|floatformat:2 }}</div>
+      <div class="stat-hint">{{ summary.outflow_count }} debit{{ summary.outflow_count|pluralize }}</div>
+    </div>
+    <div class="stat-card {% if summary.net >= 0 %}stat-success{% else %}stat-danger{% endif %}">
+      <div class="stat-label"><i class="bi bi-activity"></i>Net change</div>
+      <div class="stat-value">{% if summary.net >= 0 %}+{% endif %}{{ summary.net|floatformat:2 }}</div>
+      <div class="stat-hint">Across filtered range</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label"><i class="bi bi-hash"></i>Records</div>
+      <div class="stat-value">{{ total_transactions }}</div>
+      <div class="stat-hint">Matching rows</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead>
+          <tr>
+            <th style="width: 100px;">Date</th>
+            <th>Description</th>
+            <th class="text-end" style="width: 130px;">Amount (RM)</th>
+            <th class="text-end" style="width: 130px;">Balance (RM)</th>
+            <th style="width: 150px;">Account</th>
+          </tr>
+        </thead>
+        <tbody id="tx-tbody">
+          {% include "app/partials/transaction_rows.html" %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% if page_obj.paginator.num_pages > 1 %}
+  <div class="pagination-bar">
+    <div class="small text-muted">
+      Page <span class="font-mono">{{ page_obj.number }}</span> of <span class="font-mono">{{ page_obj.paginator.num_pages }}</span>
+      <span class="text-faint mx-1">·</span>
+      <span class="font-mono">{{ total_transactions }}</span> total
+    </div>
+    <div class="d-flex gap-2">
+      {% if page_obj.has_previous %}
+        <a class="page-btn"
+           href="/transactions/?{{ query_without_page }}{{ page_sep }}page={{ page_obj.previous_page_number }}">
+          <i class="bi bi-chevron-left"></i>Prev
+        </a>
+      {% else %}
+        <span class="page-btn" aria-disabled="true"><i class="bi bi-chevron-left"></i>Prev</span>
+      {% endif %}
+
+      {% if page_obj.has_next %}
+        <a class="page-btn"
+           href="/transactions/?{{ query_without_page }}{{ page_sep }}page={{ page_obj.next_page_number }}">
+          Next<i class="bi bi-chevron-right"></i>
+        </a>
+      {% else %}
+        <span class="page-btn" aria-disabled="true">Next<i class="bi bi-chevron-right"></i></span>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+</div>

@@ -1,13 +1,21 @@
 {% extends "app/base.html" %}
-{% block title %}Statements{% endblock %}
+{% block title %}Statements · Maybank Statements{% endblock %}
 {% block nav_statements %}active{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h4 class="mb-0"><i class="bi bi-file-earmark-text me-1"></i>Uploaded Statements</h4>
-  <a href="/" class="btn btn-sm btn-primary">
-    <i class="bi bi-upload me-1"></i>Upload More
-  </a>
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Statements</h1>
+    <div class="page-subtitle">Every PDF you've uploaded, newest first.</div>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="/transactions/" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-list-ul"></i>View transactions
+    </a>
+    <a href="/" class="btn btn-accent btn-sm">
+      <i class="bi bi-cloud-upload"></i>Upload more
+    </a>
+  </div>
 </div>
 
 {% include "app/partials/statement_list.html" %}
