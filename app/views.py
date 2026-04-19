@@ -7,7 +7,7 @@ from django.db.models import Case, CharField, Count, Q, Sum, Value, When
 from django.db.models.functions import Abs, Concat, Substr
 from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import redirect, render, get_object_or_404
 
 from maybankpdf2json import MaybankPdf2Json
 
@@ -106,24 +106,14 @@ def ordered_transactions(queryset):
 
 
 def index(request: HttpRequest) -> HttpResponse:
-    """Main upload page."""
-    statements = ordered_statements()
-    stats = {
-        "total_statements": Statement.objects.count(),
-        "total_transactions": Transaction.objects.count(),
-        "total_accounts": Statement.objects.values("account_number").distinct().count(),
-    }
-    return render(
-        request,
-        "app/index.html",
-        {"statements": statements, "stats": stats},
-    )
+    """Redirect root to statements page."""
+    return redirect("statements")
 
 
 def upload(request: HttpRequest) -> HttpResponse:
     """Handle bulk PDF upload via HTMX POST.
 
-    Returns the updated statement list partial so HTMX can swap it in.
+    Returns toast feedback, and redirects to statements page when any upload succeeds.
     """
     if request.method != "POST":
         return HttpResponse(status=405)
@@ -137,19 +127,7 @@ def upload(request: HttpRequest) -> HttpResponse:
     pdf_files = [f for f in files if f.name.lower().endswith(".pdf")]
 
     if not pdf_files:
-        statements = ordered_statements()
-        upload_results.append(
-            {
-                "file": "No valid PDF selected",
-                "status": "warning",
-                "message": "Please choose at least one .pdf file.",
-            }
-        )
-        response = render(
-            request,
-            "app/partials/statement_list.html",
-            {"statements": statements, "upload_results": upload_results},
-        )
+        response = HttpResponse(status=204)
         return with_hx_toast(response, "No valid PDF selected.", "warning")
 
     for f in pdf_files:
@@ -238,24 +216,30 @@ def upload(request: HttpRequest) -> HttpResponse:
             )
             continue
 
-    statements = ordered_statements()
     success_count = sum(1 for r in upload_results if r["status"] == "success")
     warning_count = sum(1 for r in upload_results if r["status"] == "warning")
     error_count = sum(1 for r in upload_results if r["status"] == "error")
 
-    response = render(
-        request,
-        "app/partials/statement_list.html",
-        {"statements": statements, "upload_results": upload_results},
+    message = (
+        f"Upload complete: {success_count} success, "
+        f"{warning_count} skipped, {error_count} error."
     )
-    return with_hx_toast(
-        response,
-        (
-            f"Upload complete: {success_count} success, "
-            f"{warning_count} skipped, {error_count} error."
-        ),
-        "success" if success_count > 0 else "warning",
-    )
+    level = "success" if success_count > 0 else "warning"
+
+    response = HttpResponse(status=204)
+    response = with_hx_toast(response, message, level)
+
+    if success_count > 0:
+        response["HX-Trigger-After-Swap"] = json.dumps(
+            {
+                "redirectTo": {
+                    "url": "/statements/",
+                    "delay": 900,
+                }
+            }
+        )
+
+    return response
 
 
 # ---------------------------------------------------------------------------

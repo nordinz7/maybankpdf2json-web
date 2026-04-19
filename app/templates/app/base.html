@@ -843,7 +843,6 @@
         </a>
         <div class="d-flex align-items-center">
           <div class="nav-links">
-            <a class="{% block nav_upload %}{% endblock %}" href="/">Upload</a>
             <a class="{% block nav_statements %}{% endblock %}" href="/statements/">Statements</a>
             <a class="{% block nav_transactions %}{% endblock %}" href="/transactions/">Transactions</a>
           </div>
@@ -974,6 +973,17 @@
         bodyEl.textContent = message;
         const toast = bootstrap.Toast.getOrCreateInstance(toastEl, { delay: 3500 });
         toast.show();
+      });
+
+      // Optional HTMX event to redirect after a short delay.
+      document.body.addEventListener("redirectTo", (evt) => {
+        const detail = evt.detail || {};
+        const url = detail.url;
+        if (!url) return;
+        const delay = Number(detail.delay || 0);
+        window.setTimeout(() => {
+          window.location.assign(url);
+        }, Number.isFinite(delay) && delay > 0 ? delay : 0);
       });
 
       // Keyboard shortcut: "/" focuses the first visible search input

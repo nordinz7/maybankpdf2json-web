@@ -10,109 +10,84 @@
   </div>
 </div>
 
-<div class="stat-grid">
-  <div class="stat-card stat-accent">
-    <div class="stat-label"><i class="bi bi-file-earmark-text"></i>Statements</div>
-    <div class="stat-value">{{ stats.total_statements }}</div>
-    <div class="stat-hint">Processed files</div>
+<div class="panel" style="max-width: 760px;">
+  <div class="panel-header">
+    <h2 class="panel-title"><i class="bi bi-cloud-upload"></i>Upload statements</h2>
   </div>
-  <div class="stat-card">
-    <div class="stat-label"><i class="bi bi-list-ul"></i>Transactions</div>
-    <div class="stat-value">{{ stats.total_transactions }}</div>
-    <div class="stat-hint">Rows extracted</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label"><i class="bi bi-person-vcard"></i>Accounts</div>
-    <div class="stat-value">{{ stats.total_accounts }}</div>
-    <div class="stat-hint">Unique account numbers</div>
+  <div class="panel-body">
+    <form
+      id="upload-form"
+      method="post"
+      action="/upload/"
+      enctype="multipart/form-data"
+      hx-post="/upload/"
+      hx-swap="none"
+      hx-encoding="multipart/form-data"
+      hx-indicator="#upload-spinner"
+    >
+      {% csrf_token %}
+
+      <div class="drop-zone mb-3" id="drop-zone">
+        <div class="drop-zone-icon"><i class="bi bi-filetype-pdf"></i></div>
+        <p id="drop-label">Drop PDFs or click to browse</p>
+        <p class="drop-hint" id="drop-hint">Multiple files supported · password-protected OK</p>
+        <input type="file" name="pdfs" id="pdfs" multiple accept=".pdf" />
+        <input type="file" id="pdf-folder" webkitdirectory directory multiple />
+      </div>
+
+      <div class="mb-3">
+        <button type="button" class="btn btn-outline-secondary btn-sm" id="pick-folder-btn">
+          <i class="bi bi-folder2-open"></i>Select folder
+        </button>
+      </div>
+
+      <div class="mb-3">
+        <label for="password" class="form-label">PDF password <span class="text-faint" style="font-weight:400;">(optional)</span></label>
+        <input
+          type="password"
+          class="form-control"
+          id="password"
+          name="password"
+          placeholder="Leave blank if none"
+          autocomplete="current-password"
+        />
+      </div>
+
+      <label class="d-flex align-items-start gap-2 p-3 rounded-3 mb-3" style="background: var(--surface-2); border: 1px solid var(--border); cursor: pointer;">
+        <input
+          class="form-check-input mt-0"
+          type="checkbox"
+          id="override_existing"
+          name="override_existing"
+          value="1"
+          style="margin-top: 2px !important;"
+        />
+        <div>
+          <div style="font-size:0.88rem; font-weight:500;">Override duplicates</div>
+          <div class="form-text" style="margin-top:2px;">Replace existing statement when the same account + date already exists. Off by default.</div>
+        </div>
+      </label>
+
+      <div class="d-flex align-items-center gap-2">
+        <button type="submit" class="btn btn-accent" id="upload-btn">
+          <i class="bi bi-lightning-charge-fill"></i>Process
+        </button>
+        <span
+          id="upload-spinner"
+          class="spinner-border spinner-border-sm"
+          role="status"
+          style="color: var(--accent);"
+        >
+          <span class="visually-hidden">Processing…</span>
+        </span>
+        <span class="htmx-request text-muted small htmx-indicator">Extracting transactions…</span>
+      </div>
+    </form>
   </div>
 </div>
 
-<div class="row g-4">
-  <div class="col-lg-5">
-    <div class="panel">
-      <div class="panel-header">
-        <h2 class="panel-title"><i class="bi bi-cloud-upload"></i>Upload statements</h2>
-      </div>
-      <div class="panel-body">
-        <form
-          id="upload-form"
-          method="post"
-          action="/upload/"
-          enctype="multipart/form-data"
-          hx-post="/upload/"
-          hx-target="#statement-list"
-          hx-swap="outerHTML"
-          hx-encoding="multipart/form-data"
-          hx-indicator="#upload-spinner"
-        >
-          {% csrf_token %}
-
-          <div class="drop-zone mb-3" id="drop-zone">
-            <div class="drop-zone-icon"><i class="bi bi-filetype-pdf"></i></div>
-            <p id="drop-label">Drop PDFs or click to browse</p>
-            <p class="drop-hint" id="drop-hint">Multiple files supported · password-protected OK</p>
-            <input type="file" name="pdfs" id="pdfs" multiple accept=".pdf" />
-            <input type="file" id="pdf-folder" webkitdirectory directory multiple />
-          </div>
-
-          <div class="mb-3">
-            <button type="button" class="btn btn-outline-secondary btn-sm" id="pick-folder-btn">
-              <i class="bi bi-folder2-open"></i>Select folder
-            </button>
-          </div>
-
-          <div class="mb-3">
-            <label for="password" class="form-label">PDF password <span class="text-faint" style="font-weight:400;">(optional)</span></label>
-            <input
-              type="password"
-              class="form-control"
-              id="password"
-              name="password"
-              placeholder="Leave blank if none"
-              autocomplete="current-password"
-            />
-          </div>
-
-          <label class="d-flex align-items-start gap-2 p-3 rounded-3 mb-3" style="background: var(--surface-2); border: 1px solid var(--border); cursor: pointer;">
-            <input
-              class="form-check-input mt-0"
-              type="checkbox"
-              id="override_existing"
-              name="override_existing"
-              value="1"
-              style="margin-top: 2px !important;"
-            />
-            <div>
-              <div style="font-size:0.88rem; font-weight:500;">Override duplicates</div>
-              <div class="form-text" style="margin-top:2px;">Replace existing statement when the same account + date already exists. Off by default.</div>
-            </div>
-          </label>
-
-          <div class="d-flex align-items-center gap-2">
-            <button type="submit" class="btn btn-accent" id="upload-btn">
-              <i class="bi bi-lightning-charge-fill"></i>Process
-            </button>
-            <span
-              id="upload-spinner"
-              class="spinner-border spinner-border-sm"
-              role="status"
-              style="color: var(--accent);"
-            >
-              <span class="visually-hidden">Processing…</span>
-            </span>
-            <span class="htmx-request text-muted small htmx-indicator">Extracting transactions…</span>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <div class="mt-3 text-muted small" style="padding: 0 0.25rem;">
-      <i class="bi bi-info-circle me-1"></i>
-      Supports Maybank current &amp; savings account PDFs. Files are processed independently — partial failures don’t block the rest.
-    </div>
-  </div>
-
-  <div class="col-lg-7">{% include "app/partials/statement_list.html" %}</div>
+<div class="mt-3 text-muted small" style="padding: 0 0.25rem; max-width: 760px;">
+  <i class="bi bi-info-circle me-1"></i>
+  Supports Maybank current &amp; savings account PDFs. Files are processed independently — partial failures don’t block the rest.
 </div>
 {% endblock %}
