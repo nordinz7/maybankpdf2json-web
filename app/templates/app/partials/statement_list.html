@@ -9,19 +9,30 @@
     <table class="table table-hover table-sm mb-0">
       <thead class="table-light">
         <tr>
-          <th>ID</th>
           <th>Statement Date</th>
           <th>Account Number</th>
           <th>Upload Date</th>
+          <th class="text-end" style="width: 90px;">Action</th>
         </tr>
       </thead>
       <tbody>
         {% for s in statements %}
         <tr>
-          <td class="small font-monospace">{{ s.id }}</td>
           <td class="small">{{ s.statement_date|default:"—" }}</td>
           <td class="font-monospace small">{{ s.account_number|default:"—" }}</td>
           <td class="small">{{ s.uploaded_at|date:"Y-m-d H:i" }}</td>
+          <td class="text-end">
+            <form method="post" class="d-inline"
+                  hx-post="/statements/{{ s.id }}/delete/"
+                  hx-target="#statement-list"
+                  hx-swap="outerHTML"
+                  hx-confirm="Delete statement {{ s.statement_date|default:'?' }} for account {{ s.account_number|default:'?' }}?">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete statement">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </td>
         </tr>
         {% endfor %}
       </tbody>
@@ -34,4 +45,29 @@
   </div>
   {% endif %}
 </div>
+
+{% if upload_results %}
+<div class="card shadow-sm mt-3">
+  <div class="card-header fw-semibold">
+    <i class="bi bi-clipboard-check me-1"></i>Upload Status
+  </div>
+  <ul class="list-group list-group-flush">
+    {% for r in upload_results %}
+    <li class="list-group-item d-flex justify-content-between align-items-start">
+      <div class="me-2">
+        <div class="small fw-semibold text-break">{{ r.file }}</div>
+        <div class="small text-muted">{{ r.message }}</div>
+      </div>
+      {% if r.status == "success" %}
+      <span class="badge bg-success">Success</span>
+      {% elif r.status == "warning" %}
+      <span class="badge text-dark" style="background-color: #ffc107;">Skipped</span>
+      {% else %}
+      <span class="badge bg-danger">Error</span>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
 </div>

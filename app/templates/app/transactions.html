@@ -5,8 +5,8 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h4 class="mb-0"><i class="bi bi-list-ul me-1"></i>Transactions</h4>
-  <span class="text-muted small">
-    {{ transactions|length }} record(s)
+  <span class="text-muted small" id="tx-total-count">
+    {{ total_transactions }} record(s)
   </span>
 </div>
 
@@ -17,20 +17,30 @@
           hx-get="/transactions/"
           hx-target="#tx-tbody"
           hx-swap="innerHTML"
-          hx-trigger="input delay:300ms from:#q, change from:#account-select, change from:#stmt-select"
+          hx-trigger="input delay:300ms from:#q, change from:#account-select, change from:#stmt-select, change from:#date-from, change from:#date-to"
           hx-push-url="true">
 
       <div class="row g-2 align-items-end">
-        <div class="col-md-5">
-          <label class="form-label mb-1 small fw-semibold">Search description</label>
+        <div class="col-md-3">
+          <label class="form-label mb-1 small fw-semibold">Search (desc, amount, balance)</label>
           <div class="input-group">
             <span class="input-group-text"><i class="bi bi-search"></i></span>
             <input type="text" class="form-control" id="q" name="q" value="{{ q }}"
-                   placeholder="e.g. SHOPEE, GRAB, ATM…">
+                   placeholder="e.g. SHOPEE or 123.45">
           </div>
         </div>
 
-        <div class="col-md-3">
+        <div class="col-md-2">
+          <label class="form-label mb-1 small fw-semibold">Date from</label>
+          <input type="date" class="form-control" id="date-from" name="date_from" value="{{ date_from }}">
+        </div>
+
+        <div class="col-md-2">
+          <label class="form-label mb-1 small fw-semibold">Date to</label>
+          <input type="date" class="form-control" id="date-to" name="date_to" value="{{ date_to }}">
+        </div>
+
+        <div class="col-md-2">
           <label class="form-label mb-1 small fw-semibold">Account</label>
           <select class="form-select" id="account-select" name="account">
             <option value="">All accounts</option>
@@ -40,7 +50,7 @@
           </select>
         </div>
 
-        <div class="col-md-3">
+        <div class="col-md-2">
           <label class="form-label mb-1 small fw-semibold">Statement</label>
           <select class="form-select" id="stmt-select" name="statement">
             <option value="">All statements</option>
@@ -81,14 +91,49 @@
     </table>
   </div>
 </div>
+
+{% if page_obj.paginator.num_pages > 1 %}
+<div class="d-flex justify-content-between align-items-center mt-3">
+  <div class="small text-muted">
+    Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+  </div>
+  <div class="btn-group">
+    {% if page_obj.has_previous %}
+    <a class="btn btn-sm btn-outline-secondary"
+       href="/transactions/?{{ query_without_page }}{{ page_sep }}page={{ page_obj.previous_page_number }}">
+      <i class="bi bi-chevron-left"></i> Prev
+    </a>
+    {% else %}
+    <button class="btn btn-sm btn-outline-secondary" disabled>
+      <i class="bi bi-chevron-left"></i> Prev
+    </button>
+    {% endif %}
+
+    {% if page_obj.has_next %}
+    <a class="btn btn-sm btn-outline-secondary"
+       href="/transactions/?{{ query_without_page }}{{ page_sep }}page={{ page_obj.next_page_number }}">
+      Next <i class="bi bi-chevron-right"></i>
+    </a>
+    {% else %}
+    <button class="btn btn-sm btn-outline-secondary" disabled>
+      Next <i class="bi bi-chevron-right"></i>
+    </button>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}
 <script>
-  // Keep result count in heading up to date after HTMX swaps
-  document.body.addEventListener("htmx:afterSwap", () => {
+  // Keep visible count aligned with currently rendered rows in HTMX mode.
+  document.body.addEventListener("htmx:afterSwap", (evt) => {
+    if (evt.target && evt.target.id !== "tx-tbody") return;
     const rows = document.querySelectorAll("#tx-tbody tr.tx-row").length;
-    document.querySelector(".text-muted.small").textContent = rows + " record(s)";
+    const countEl = document.getElementById("tx-total-count");
+    if (countEl) {
+      countEl.textContent = rows + " record(s)";
+    }
   });
 </script>
 {% endblock %}
