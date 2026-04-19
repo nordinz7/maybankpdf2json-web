@@ -4,7 +4,7 @@ from datetime import datetime
 
 from django.db import IntegrityError
 from django.db.models import Case, CharField, Q, Value, When
-from django.db.models.functions import Concat, Substr
+from django.db.models.functions import Abs, Concat, Substr
 from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render, get_object_or_404
@@ -284,11 +284,18 @@ def transactions(request: HttpRequest) -> HttpResponse:
         if amount is None:
             qs = qs.filter(desc__icontains=q)
         else:
+            abs_amount = abs(amount)
             epsilon = 0.005
-            qs = qs.filter(
+            qs = qs.annotate(abs_trans=Abs("trans"), abs_bal=Abs("bal")).filter(
                 Q(desc__icontains=q)
-                | Q(trans__gte=amount - epsilon, trans__lte=amount + epsilon)
-                | Q(bal__gte=amount - epsilon, bal__lte=amount + epsilon)
+                | Q(
+                    abs_trans__gte=abs_amount - epsilon,
+                    abs_trans__lte=abs_amount + epsilon,
+                )
+                | Q(
+                    abs_bal__gte=abs_amount - epsilon,
+                    abs_bal__lte=abs_amount + epsilon,
+                )
             )
     if account:
         qs = qs.filter(statement__account_number__icontains=account)
